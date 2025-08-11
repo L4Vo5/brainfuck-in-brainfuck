@@ -1,0 +1,326 @@
+[
+That's right
+A brainfuck interpreter made in brainfuck
+Ohhhh boyyyyyyyuyuyuyuy
+
+ascii codes:
++ 43
+, 44
+. 46
+- 45
+< 60
+> 62
+[ 91
+] 93
+
+The order will be:
+[]+-<>,.
+12345678
+
+So the first part will be taking in the 0-terminated input and mapping each character to a code between 1 and 8. Probably [ and ] should be 1 and 2 or 2 and 1.
+Also characters that are none of these should be ignored.
+The tape will be laid as such, where each letter is a "track":
+00ABABABABAB...ABAB000CDCDCDCD...
+B: The instructions in order
+A: The instruction seek track. Basically, you need *some* way to seek to the current instruction. For this, a space is reserved to the left of every instruction. This space is 0 by default. The current instruction is moved to this space, allowing you to easily seek to the "hole" left in B, because all other parts of B will be nonzero.
+C: The data.
+D: The data pointer track. Everything left of the pointer is set to 1, the pointer is 0, then everything after the pointer is also 0. So the pointer is the first zero.
+[ and ] are handled by seeking and using the instruction pointer itself as a counter for the stack, which conveniently will reach 0 when you have to stop. Furthermore, the rest of the pointer track can be used to do intermediate calculations as long as you set it to 1 when you're done. Also POTENTIALLY the stack could use 2 bytes? to support more than 255 nesting levels of []?
+000 in the middle is useful both to serve as "instruction 0" (end) and to serve as scratch and seek space.
+I'll call the 000 the "fixed point"
+
+
+
+
+]
+
+So we start with a loop to get input until the input is 0
+As per the specs the first two cells are 00 and the rest go ABAB with B being the instruction
+but we'll get input on the A and map onto the instruction
+>>,[
+    Just assume it's each character and correct when it's not
+    Start with assuming it's a plus
+    >+++<
+    -------------------------------------------
+    [
+        No it's not
+        It's a comma
+        >++++<
+        -
+        [No it's minus
+            >---<
+            -
+            [No it's dot
+                >++++<
+                -
+                [No it's left
+                    >---<
+                    --------------
+                    [No it's clearly right
+                        >+<
+                        --
+                        [
+                            Open bracket
+                            >-----<
+                            -----------------------------
+                            [actually close bracket
+                                >+<
+                                --
+                                [nvm it was nothing at all awesomesauce
+                                    >--<
+                                    [-]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+    ]
+    Cool so move to the next instruction unless it was 0 in which case we'll just work on that one again
+    >[>>]<,
+]
+we're currently at the first 0 in the 000 fixed point
+Now go back to the start
+<[<<]>>
+we're on the first instruction
+now begin looping on the current instruction
+when we reach the 0 instruction at the end that's gg
+[
+    and thus the fun starts
+    we got an instruction to interpret
+    left and right are guaranteed to be 0
+    three spaces left and right too
+
+    the cell to the right is set to 1
+    >+<
+    decrease the instruction such that the targetted instruction would be 0
+    if it's not 0 then it's not that instruction and thus the inside will EVENTUALLY set the right cell to 0
+    each instruction must end on itself as 0 with its value copied to the left cell
+    which is promptly restored before moving on to the next instruction
+
+    - [
+        it's not open bracket
+        - [
+            it's not close bracket
+            - [
+                it's not plus
+                - [
+                    it's not minus
+                    - [
+                        it's not left
+                        - [
+                            it's not right
+                            - [
+                                it's not input
+                                - [
+                                    it's not output
+                                    so wtf is it
+                                    who knows man just try to ignore the instruction
+                                    [-]
+                                    >[-]<
+                                ]
+                                >[-
+                                    it's dot
+                                    <<++++++++>
+                                    >>[>>]>>>[>>]<.
+                                    <[<<]<<<[<<]>
+                                ]<
+                            ]
+                            >[-
+                                it's comma
+                                <<+++++++>
+                                >>[>>]>>>[>>]<,
+                                <[<<]<<<[<<]>
+                            ]<
+                        ]
+                        >[-
+                            it's right
+                            <<++++++>
+                            >>[>>]>>>[>>]
+                            +[<<]<<<[<<]>
+                        ]<
+                    ]
+                    >[-
+                        it's left
+                        <<+++++>
+                        >>[>>]<+>>>>
+                        this requires extra logic to not move past the start
+                        you should be at the first D which also should be nonzero most of the time
+                        if it IS zero tho you wanna skip the instruction
+                        [
+                            [>>]
+                            <<-
+
+                            <<[<<]
+                        ]
+                        there's a divergence tho
+                        we're now either at the third 0 in the 000 fixed point or 2 steps right of it
+                        that's why earlier we set the first 0 to 1
+                        <<[->>]
+                        now we're at the third 0 for sure
+                        <<<[<<]>
+                    ]<
+                ]
+                >[-
+                    it's minus
+                    <<++++>
+                    >>[>>]>>>[>>]
+                    <-
+                    <[<<]<<<[<<]>
+                ]<
+            ]
+            >[-
+                it's plus
+                <<+++>
+                >>[>>]>>>[>>]
+                <+
+                <[<<]<<<[<<]>
+            ]<
+        ]
+        >[-
+            it's close bracket
+            <<++>
+            same idea as open bracket for the data being zero or nonzero
+            >>[>>]>>>[>>]<
+            [
+                <[<<]<<<[<<]
+
+                from 200 to 021:
+                ++<-->>+
+                this time the stack counter is to the right of the close bracket
+                so the analyzed instruction is 3 cells left
+                also the condition for increasing or decreasing is flipped
+                [
+                    <<<
+                    -[>>>+<<]<[<]>
+                    -[>>>-<<]<[<]>++
+                    >>>[-<<+>>]<<
+                ]
+                now we're at the right of the corresponding open bracket
+                set the state as is required
+                010 to 100
+                <-<+
+                and set up the 100 on the fixed point ending at the (formerly) third 0
+                >>>[>>]<+>>
+            ]
+            <[<<]
+            <[->]
+            <<[<<]>
+        ]<
+    ]
+    >[-
+        it's open bracket
+        <<+>
+        OK this is tough
+        first we do wanna navigate to the data
+        >>[>>]>>>[>>]<
+        if it's zero then we'll go set everything up then get back
+        we'll end somewhere in the 000 fixed point which we also modified somehow
+
+        so I'll do:
+        set a 1 THREE to the right which is where we'll branch
+        >>>+<<<
+        use 0s on either side to converge
+        left could be 0 from the fixed point or 1 from the data pointer so clear it
+        <[-]>
+        now if it's nonzero we clear the thing on the right and end on the left
+        so we go right one and keep going until a 0
+        either way we end up 1 to the right
+        [>>>-<<<<]>[>]
+        so we revisit 3 to the right
+        >>
+        and copy its value to 2 to the right
+        [-<<+>>]<<
+        then restore the left to 1 even tho it could be wrong if it was the fixed point
+        <<+>>
+        so now we diverge on either a 1 or a 0 right of the data
+        [-
+            NOW we know it was ZERO
+            aka we wanna skip ahead to the closing bracket
+            so let's get back to the instruction
+            <<[<<]
+            problem is now the fixed point could be 001 and we're on the first 0
+            or 000 and we're on the third
+            but we can converge as such
+            <[>>]
+            this works because we're definitely not in the last instruction so left of the first 0 is always nonzero
+            now we're on the second 0 and we can get back to the instruction
+            <<[<<]
+            say this is instruction 3
+            currently we have:
+            000B0B0B100B0B0B020B0B0B00WCDCD etc
+                     ^
+            (W is either 0 or 1)
+            we wanna end like this:
+            000B0B0B010B0B0B200B0B0BXYZCDCD etc
+                                    ^^^
+            (1 and 2 are open and close bracket respectively and XYZ is the desired state for the fixed point)
+
+            so first restore this instruction
+            +<
+            NOW
+            We're left of the original instruction
+            it's the "stack counter"
+            it starts at 1 (convenient!)
+            the analyzed instruction is the next one aka 3 cells ahead
+            instructions with value 1 aka open bracket will increase the stack by 1
+            instructions with value 2 aka close bracket will decrease the stack by 1
+            [
+                clever idea:
+                instructions that AREN'T 1 decrease by 1
+                instructions that AREN'T 2 increase by 1
+                aka irrelevant instructions have a net 0 and each relevant instruction does its thing
+                for the purposes of a non looping conditional we need 2 usable cells
+                which are the ones right and left of the instruction
+                those cells are already 0
+                >>>
+                -[<<<->>]>[>]<
+                -[<<<+>>]>[>]<++
+                now transfer the stack to the right
+                <<<[->>+<<]>>
+            ]
+            now we're left of the corresponding close bracket
+            set the state as is required
+            020 to 200
+            ++>--
+            XYZ shall be 000 so set that up ending at the third 0
+            >>[>>]>[-]
+        ]
+        again:
+        I'll just use XYZ to label the fixed point
+        if data was nonzero this is right of data on a 0 and also left of data is a 1 when MAYBE it should be 0 because it's Z
+        meaning maybe the fixed point is wrongly 001
+        if data was zero this is in 000 third 0
+        so start with this
+        <<[<<]
+        three possibilities:
+        we're on X and XYZ is 000
+        we're on X and XYZ is 001
+        we're on Z and XYZ is 000
+        note that in both 000 cases it's 000C1
+        thus:
+        >>[<<]
+        either:
+        we're on Z and XYZ is 000
+        we're on X and XYZ is 001
+        in AB001 we can count on B being nonzero
+        in AB000 we don't know if B or A is nonzero (the other is zero)
+        <[>>]
+        now miraculously both are in Y and we can clear Z
+        >[-]
+        that was way harder than I thought aaaa
+        <<<[<<]>
+    ]< end of open bracket
+    copy back the instruction
+    <[->+<]>
+    and move on to the next
+    >>
+]
+255 marks the start of the CDCDCD section
+>-
+
+
+
+
+
