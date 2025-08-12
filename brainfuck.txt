@@ -251,11 +251,11 @@ when we reach the 0 instruction at the end that's gg
             say this is instruction 3
             currently we have:
             00B0B0B100B0B0B020B0B0B00WCDCD etc
-                     ^
+                    ^
             (W is either 0 or 1)
             we wanna end like this:
             00B0B0B010B0B0B200B0B0BXYZCDCD etc
-                                    ^^^
+                                   ^^^
             (1 and 2 are open and close bracket respectively and XYZ is the desired state for the fixed point)
 
             so first restore this instruction
