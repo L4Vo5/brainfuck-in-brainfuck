@@ -20,9 +20,10 @@ The order will be:
 So the first part will be taking in the 0-terminated input and mapping each character to a code between 1 and 8. Probably [ and ] should be 1 and 2 or 2 and 1.
 Also characters that are none of these should be ignored.
 The tape will be laid as such, where each letter is a "track":
-00ABABABABAB...ABAB000CDCDCDCD...
+0ABABABABAB...ABAB000CDCDCDCD...
 B: The instructions in order
 A: The instruction seek track. Basically, you need *some* way to seek to the current instruction. For this, a space is reserved to the left of every instruction. This space is 0 by default. The current instruction is moved to this space, allowing you to easily seek to the "hole" left in B, because all other parts of B will be nonzero.
+The initial 0 is needed so you can seek to the start of the program.
 C: The data.
 D: The data pointer track. Everything left of the pointer is set to 1, the pointer is 0, then everything after the pointer is also 0. So the pointer is the first zero.
 [ and ] are handled by seeking and using the instruction pointer itself as a counter for the stack, which conveniently will reach 0 when you have to stop. Furthermore, the rest of the pointer track can be used to do intermediate calculations as long as you set it to 1 when you're done. Also POTENTIALLY the stack could use 2 bytes? to support more than 255 nesting levels of []?
@@ -37,7 +38,7 @@ I'll call the 000 the "fixed point"
 So we start with a loop to get input until the input is 0
 As per the specs the first two cells are 00 and the rest go ABAB with B being the instruction
 but we'll get input on the A and map onto the instruction
->>,[
+>,[
     Just assume it's each character and correct when it's not
     Start with assuming it's a plus
     >+++<
@@ -249,11 +250,11 @@ when we reach the 0 instruction at the end that's gg
             <<[<<]
             say this is instruction 3
             currently we have:
-            000B0B0B100B0B0B020B0B0B00WCDCD etc
+            00B0B0B100B0B0B020B0B0B00WCDCD etc
                      ^
             (W is either 0 or 1)
             we wanna end like this:
-            000B0B0B010B0B0B200B0B0BXYZCDCD etc
+            00B0B0B010B0B0B200B0B0BXYZCDCD etc
                                     ^^^
             (1 and 2 are open and close bracket respectively and XYZ is the desired state for the fixed point)
 
@@ -317,10 +318,5 @@ when we reach the 0 instruction at the end that's gg
     and move on to the next
     >>
 ]
-255 marks the start of the CDCDCD section
+255 marks the start of the CDCDCD section if you wanna look at the final state of the cells (optional)
 >-
-
-
-
-
-
